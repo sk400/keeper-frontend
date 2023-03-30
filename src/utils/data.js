@@ -3,7 +3,7 @@ import {
   CreateOutlined,
   ArchiveOutlined,
   DeleteOutline,
-  FiberManualRecord,
+  LabelOutlined,
 } from "@mui/icons-material";
 
 export const sidebarItems = [
@@ -26,11 +26,11 @@ export const sidebarItems = [
 ];
 
 export const sidebarLevel = {
-  name: "Lebel",
-  icon: <FiberManualRecord />,
+  name: "Label",
+  icon: <LabelOutlined />,
 };
 
 export const sidebarEdit = {
-  name: "Edit lebel",
+  name: "Edit label",
   icon: <CreateOutlined />,
 };

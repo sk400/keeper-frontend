@@ -7,10 +7,28 @@ import { LayOut } from "./components";
 import { logIn } from "./features/user/userSlice";
 import { auth } from "./firebase";
 import { Login } from "./pages";
+import "./App.css";
+import { fetchAllNotes } from "./utils/fetchAllNotes";
+import { setNotes } from "./features/notes/notesSlice";
+import { fetchAllLabels } from "./utils/labels/fetchAllLabels";
+import { setLabels } from "./features/labels/labelSlice";
 
 const App = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const getNotes = async (id) => {
+    const data = await fetchAllNotes(id);
+    const notes = await data?.notes;
+    dispatch(setNotes(notes));
+  };
+
+  const getLabels = async (id) => {
+    const data = await fetchAllLabels(id);
+    const labels = await data?.labels;
+    dispatch(setLabels(labels));
+  };
+
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -22,6 +40,8 @@ const App = () => {
         };
 
         dispatch(logIn(userData));
+        getNotes(userData?.id);
+        getLabels(userData?.id);
         navigate("/");
       } else {
         navigate("/login");

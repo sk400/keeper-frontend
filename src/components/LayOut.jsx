@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useState } from "react";
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
@@ -14,12 +14,32 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { Avatar, Stack } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  Input,
+  Modal,
+  Paper,
+  Stack,
+  Tooltip,
+} from "@mui/material";
 import { sidebarEdit, sidebarItems, sidebarLevel } from "../utils/data";
 import { Link, Route, Routes } from "react-router-dom";
-import { Archive, Bin, HomePage, LabelNotes } from "../pages";
-import { useSelector } from "react-redux";
+import { ArchiveNotes, Bin, HomePage, LabelNotes } from "../pages";
+import { useDispatch, useSelector } from "react-redux";
 import { userInfo } from "../features/user/userSlice";
+import {
+  Add,
+  CloseOutlined,
+  Delete,
+  LabelOutlined,
+  LabelRounded,
+} from "@mui/icons-material";
+import { createLabel } from "../utils/labels/createLabel";
+import { labelsInfo, setLabels } from "../features/labels/labelSlice";
+import { fetchAllLabels } from "../utils/labels/fetchAllLabels";
+import { updateLabel } from "../utils/labels/updateLabel";
+import { deleteLabel } from "../utils/labels/deleteLabel";
 
 const drawerWidth = 240;
 
@@ -89,12 +109,62 @@ const Drawer = styled(MuiDrawer, {
   }),
 }));
 
-export default function LayOut({ children }) {
-  const [open, setOpen] = React.useState(false);
+export default function LayOut() {
+  const [open, setOpen] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
   const user = useSelector(userInfo);
+  const [openModal, setOpenModal] = useState(false);
+  const [labelName, setLabelName] = useState("");
+  const [newLabelName, setNewLabelName] = useState("");
+  const [labelId, setLabelId] = useState(null);
+  const labels = useSelector(labelsInfo);
+  const dispatch = useDispatch();
+  // console.log(labels);
 
   const handleDrawerOpen = () => {
     setOpen(!open);
+  };
+
+  const getLabels = async (id) => {
+    const data = await fetchAllLabels(id);
+    const labels = await data?.labels;
+    dispatch(setLabels(labels));
+  };
+
+  const handleClick = async () => {
+    setLabelName("");
+
+    let labelData = {
+      name: labelName,
+    };
+
+    let userId = user?.id;
+
+    let data = await createLabel(labelData, userId);
+    getLabels(userId);
+  };
+
+  const editLabel = async () => {
+    let labelData = {
+      name: newLabelName,
+    };
+
+    let userId = user?.id;
+
+    console.log(newLabelName);
+    console.log(userId);
+    console.log(labelId);
+
+    let data = await updateLabel(labelData, userId, labelId);
+    // console.log(data);
+    getLabels(userId);
+  };
+
+  const handleDeleteLabel = async () => {
+    let userId = user?.id;
+    const data = await deleteLabel(userId, labelId);
+
+    getLabels(userId);
   };
 
   return (
@@ -190,7 +260,7 @@ export default function LayOut({ children }) {
               </ListItem>
             </Link>
           ))}
-
+          {/* edit label */}
           <ListItem
             disablePadding
             sx={{
@@ -206,6 +276,7 @@ export default function LayOut({ children }) {
                 justifyContent: open ? "initial" : "center",
                 px: 2.5,
               }}
+              onClick={() => setOpenModal(!openModal)}
             >
               <ListItemIcon
                 sx={{
@@ -225,55 +296,222 @@ export default function LayOut({ children }) {
             </ListItemButton>
           </ListItem>
 
-          <Link
-            to={`/lebel/1`}
-            style={{ textDecoration: "none", color: "black" }}
-          >
-            <ListItem
-              disablePadding
-              sx={{
-                display: "block",
-                "&:hover": {
-                  backgroundColor: "#F0EB8D",
-                },
-              }}
-            >
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
-                }}
+          {labels?.length !== 0 &&
+            labels?.map((label) => (
+              <Link
+                to={`/label/${label?._id}`}
+                style={{ textDecoration: "none", color: "black" }}
+                key={label?._id}
               >
-                <ListItemIcon
+                <ListItem
+                  disablePadding
                   sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "center",
+                    display: "block",
+                    "&:hover": {
+                      backgroundColor: "#F0EB8D",
+                    },
                   }}
                 >
-                  {sidebarLevel?.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={sidebarLevel?.name}
-                  sx={{
-                    opacity: open ? 1 : 0,
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </Link>
+                  <ListItemButton
+                    sx={{
+                      minHeight: 48,
+                      justifyContent: open ? "initial" : "center",
+                      px: 2.5,
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        mr: open ? 3 : "auto",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <LabelOutlined />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={label?.name}
+                      sx={{
+                        opacity: open ? 1 : 0,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </Link>
+            ))}
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <DrawerHeader />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="archive" element={<Archive />} />
+          <Route path="archive" element={<ArchiveNotes />} />
           <Route path="/bin" element={<Bin />} />
-          <Route path="/lebel/:labelId" element={<LabelNotes />} />
+          <Route path="/label/:labelId" element={<LabelNotes />} />
         </Routes>
       </Box>
+      <Modal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+          }}
+        >
+          <Paper
+            sx={{
+              maxWidth: "250px",
+              height: "250px",
+              p: 2,
+              position: "relative",
+            }}
+            square
+          >
+            <Typography variant="subtitle2" gutterBottom>
+              Edit labels
+            </Typography>
+
+            <IconButton
+              onClick={() => setOpenModal(false)}
+              sx={{
+                position: "absolute",
+                top: 1,
+                right: 1,
+                zIndex: 5,
+              }}
+            >
+              <CloseOutlined />
+            </IconButton>
+
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Input
+                placeholder="Create a new label"
+                type="text"
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+              />
+              <IconButton
+                onClick={() => {
+                  handleClick();
+                  setOpenModal(false);
+                }}
+              >
+                <Add />
+              </IconButton>
+            </Stack>
+            <List
+              sx={{
+                height: "150px",
+                overflowY: "auto",
+              }}
+            >
+              {labels?.map((label) => (
+                <ListItem disablePadding key={label?._id}>
+                  <ListItemButton
+                    onClick={() => {
+                      setLabelId(label?._id);
+                      setOpenEditModal(true);
+                    }}
+                  >
+                    <ListItemIcon>
+                      <LabelRounded />
+                    </ListItemIcon>
+                    <ListItemText primary={label?.name} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+
+            <Modal
+              open={openEditModal}
+              onClose={() => setOpenEditModal(false)}
+              aria-labelledby="parent-modal-title"
+              aria-describedby="parent-modal-description"
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100vh",
+                  position: "relative",
+                }}
+              >
+                <Paper
+                  sx={{
+                    maxWidth: "250px",
+                    height: "250px",
+                    p: 2,
+                    position: "relative",
+                  }}
+                  square
+                >
+                  <Typography variant="subtitle2" gutterBottom>
+                    New name for label
+                  </Typography>
+
+                  <IconButton
+                    onClick={() => setOpenEditModal(false)}
+                    sx={{
+                      position: "absolute",
+                      top: 1,
+                      right: 1,
+                      zIndex: 5,
+                    }}
+                  >
+                    <CloseOutlined />
+                  </IconButton>
+
+                  <Stack direction="row" alignItems="center" spacing={1} my={2}>
+                    <Input
+                      placeholder="New name"
+                      type="text"
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                    />
+                    <IconButton
+                      onClick={() => {
+                        editLabel();
+                        setOpenEditModal(false);
+                        setOpenModal(false);
+                      }}
+                    >
+                      <Add />
+                    </IconButton>
+                  </Stack>
+                  <Tooltip
+                    title="Delete label"
+                    placement="bottom"
+                    sx={{
+                      position: "absolute",
+                      bottom: 3,
+                      right: 3,
+
+                      width: "50px",
+                      height: "50px",
+                    }}
+                  >
+                    <IconButton
+                      onClick={() => {
+                        handleDeleteLabel();
+                        setOpenEditModal(false);
+                        setOpenModal(false);
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Tooltip>
+                </Paper>
+              </Box>
+            </Modal>
+          </Paper>
+        </Box>
+      </Modal>
     </Box>
   );
 }

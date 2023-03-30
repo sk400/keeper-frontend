@@ -1,7 +1,10 @@
 
-prompt
-install masonry layout
-notes
+
+
+fix sidebar
+fix responsiveness
+deploy
+refactor
 
 
 

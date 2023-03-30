@@ -9,7 +9,7 @@ function Login() {
     signInWithPopup(auth, provider)
       .then((result) => {
         // Handle successful login here
-        console.log("Successful login:", result.user);
+        // console.log("Successful login:", result.user);
       })
       .catch((error) => {
         // Handle login error here
